@@ -20,7 +20,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   token: null,
   isAuthenticated: false,
   setUser: (user) => set({ user, isAuthenticated: !!user }),
-  setToken: (token) => ({ token }),
+  setToken: (token) => set({ token }),
   logout: () => {
     set({ user: null, token: null, isAuthenticated: false });
     if (typeof window !== "undefined") {

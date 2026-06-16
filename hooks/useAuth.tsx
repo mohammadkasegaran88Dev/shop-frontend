@@ -9,7 +9,7 @@ export function useAuth() {
   const login = useCallback(
     async (email: string, password: string) => {
       try {
-        const response = await api.post<LoginResponse>("auth/login", {
+        const response = await api.post<LoginResponse>("/login", {
           email,
           password,
         });
@@ -28,12 +28,18 @@ export function useAuth() {
   );
 
   const register = useCallback(
-    async (name: string, email: string, password: string) => {
+    async (
+      name: string,
+      email: string,
+      password: string,
+      password_confirmation: string,
+    ) => {
       try {
-        const response = await api.post<LoginResponse>("/auth/register", {
+        const response = await api.post<LoginResponse>("/register", {
           name,
           email,
           password,
+          password_confirmation,
         });
         const { token, user } = response.data;
         setToken(token);

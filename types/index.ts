@@ -6,7 +6,7 @@ export interface Product {
   sku: string;
   slug: string;
   status: string;
-  image: string;
+  images: ProductImage[];
   category: string;
   stock: number;
   createAt: string;
@@ -31,4 +31,25 @@ export interface ApiResponse<T> {
   data?: T;
   message?: string;
   errors?: Record<string, string[]>;
+}
+
+export interface PaginatedProducts {
+  data: Product[];
+  links: {
+    first: string;
+    last: string;
+    prev: string | null;
+    next: string | null;
+  };
+  meta: {
+    current_page: number;
+    last_page: number;
+  };
+}
+
+export interface ProductImage {
+  id: number;
+  path: string;
+  is_primary: boolean;
+  sort_order: number;
 }
