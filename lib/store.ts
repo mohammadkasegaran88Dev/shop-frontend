@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import api from "./api";
 
 interface User {
   id: number;
@@ -40,47 +41,111 @@ interface CartItem {
 interface CartStore {
   items: CartItem[];
   total: number;
-  addItem: (item: CartItem) => void;
-  removeItem: (id: number) => void;
-  updateQuantity: (id: number, quantity: number) => void;
-  clearCart: () => void;
+  isLoading: boolean;
+  error: string | null;
+  fetchCart: () => Promise<void>;
+  addItem: (productId: number, quantity: number) => Promise<void>;
+  updateQuantity: (itemId: number, quantity: number) => Promise<void>;
+  removeItem: (itemId: number) => Promise<void>;
+  clearCart: () => Promise<void>;
   calculateTotal: () => void;
 }
-export const useCartStore = create<CartStore>((set) => ({
+export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
   total: 0,
-  addItem: (item) =>
-    set((state) => {
-      const existingItem = state.items.find(
-        (i) => i.productId === item.productId,
-      );
-      if (existingItem) {
-        return {
-          items: state?.items?.map((i) =>
-            i.productId === item.productId
-              ? { ...i, quantity: i.quantity + item?.quantity }
-              : i,
-          ),
-        };
-      }
-      return { items: [...state.items, item] };
-    }),
+  isLoading: false,
+  error: null,
 
-  removeItem: (id) =>
-    set((state) => ({ items: state.items.filter((i) => i.id !== id) })),
+  fetchCart: async () => {
+    set({ isLoading: true, error: null });
 
-  updateQuantity: (id, quantity) =>
-    set((state) => ({
-      items: state.items.map((i) => (i.id === id ? { ...i, quantity } : i)),
-    })),
+    try {
+      const response = await api.get("/cart");
+      const cartData = response.data;
 
-  clearCart: () => set({ items: [], total: 0 }),
+      const items =
+        cartData.data?.items?.map((item: any) => ({
+          id: item?.id,
+          productId: item?.product_id,
+          name: item?.product?.name || "",
+          price: item?.product?.price || 0,
+          quantity: item?.quantity,
+          image: item?.product?.images?.[0]?.path || "",
+        })) || [];
+      set({ items, isLoading: false });
+      get().calculateTotal();
+    } catch (error: any) {
+      set({
+        error: error?.response?.data?.message || "خطا در دریافت سبد خرید",
+        isLoading: false,
+      });
+    }
+  },
 
-  calculateTotal: () =>
-    set((state) => ({
-      total: state.items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0,
-      ),
-    })),
+  addItem: async (productId: number, quantity: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.post("/cart/items", {
+        product_id: productId,
+        quantity,
+      });
+      await get().fetchCart();
+    } catch (error: any) {
+      set({
+        error: error.response?.data?.message || "خطا در اضافه کردن محصول",
+        isLoading: false,
+      });
+    }
+  },
+
+  updateQuantity: async (itemId: number, quantity: number) => {
+    set({ isLoading: true, error: null });
+
+    try {
+      await api.patch(`/cart/itemId/${itemId}`, {
+        quantity,
+      });
+      await get().fetchCart();
+    } catch (error: any) {
+      set({
+        error: error?.response?.data?.message || "خطا در بروز رسانی تعداد",
+        isLoading: false,
+      });
+    }
+  },
+
+  removeItem: async (itemId: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.delete(`/cart/item/${itemId}`);
+      await get().fetchCart();
+    } catch (error: any) {
+      set({
+        error: error?.response?.data?.message || "خطا در حذف محصول",
+        isLoading: false,
+      });
+    }
+  },
+
+  clearCart: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.delete("/cart");
+      set({ items: [], total: 0, isLoading: false });
+    } catch (error: any) {
+      set({
+        error: error?.resopnse?.data?.message || "خطا در پاکر کردن سبد خرید",
+        isLoading: false,
+      });
+    }
+  },
+
+  calculateTotal: () => {
+    const { items } = get();
+    const total = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0,
+    );
+    set({ total });
+  },
 }));
