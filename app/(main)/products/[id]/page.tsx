@@ -19,7 +19,6 @@ export default function ProductPage() {
   const addItem = useCartStore((state) => state.addItem);
   const [quantity, setQuantity] = useState(1);
 
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
@@ -49,16 +48,10 @@ export default function ProductPage() {
     );
   }
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (product) {
-      addItem({
-        id: product.id,
-        productId: product.id,
-        name: product.name,
-        price: product.price,
-        quantity,
-        image: product.images?.[0]?.path ?? "",
-      });
+      console.log("product.id", product.id);
+      await addItem(product.id, quantity);
     }
   };
   return (

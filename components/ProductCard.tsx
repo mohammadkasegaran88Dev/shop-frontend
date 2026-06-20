@@ -1,4 +1,3 @@
-import { useCartStore } from "@/lib/store";
 import { Product } from "@/types";
 import {
   Card,
@@ -10,28 +9,21 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "./ui/button";
+import { useCart } from "@/hooks/useCart";
 
 export function ProductCard({ product }: { product: Product }) {
-  const addItem = useCartStore((state) => state.addItem);
+  // const addItem = useCartStore((state) => state.addItem);
+  const { addItem, isLoading } = useCart();
+
   const handleAddToCart = () => {
-    addItem({
-      id: product.id,
-      productId: product.id,
-      name: product.name,
-      price: product.price,
-      quantity: 1,
-      image: product.images?.[0]?.path ?? "",
-    });
+    addItem(product.id, 1);
   };
-  console.log(
-    "state.addItem",
-    useCartStore((state) => state.items),
-  );
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <div className="relative h-24 w-auto bg-gray-100 ">
         <Image
-          src={"/images/placeholder.png"}
+          src={product.images?.[0]?.path || "/images/placeholder.png"}
           alt={product.name}
           fill
           className="object-cover p-2 rounded-xl"
@@ -59,9 +51,9 @@ export function ProductCard({ product }: { product: Product }) {
           <Button
             className="flex-1 w-full"
             onClick={handleAddToCart}
-            disabled={product.stock === 0}
+            disabled={product.stock === 0 || isLoading}
           >
-            Add to Cart
+            {isLoading ? "Adding..." : "Add to Cart"}
           </Button>
         </div>
       </CardContent>
